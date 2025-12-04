@@ -1,0 +1,9 @@
+command:
+- "python"
+- "app.py"
+
+env:
+- name: "SPACE_ID"
+  value: "REPLACE_ME_SPACE_ID"
+- name: "SERVING_ENDPOINT_NAME"
+  value: "REPLACE_ME_SERVING_ENDPOINT"
