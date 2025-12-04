@@ -284,7 +284,7 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         return conversation_id, result, query_text
         
     except Exception as e:
-        return None, f"Sorry, an error occurred: {str(e)}. Please try again.", None
+        return None, f"Lo siento, se ha producido un error: {str(e)}. Por favor, inténtalo de nuevo.", None
 
 def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
@@ -322,12 +322,12 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     except Exception as e:
         # Handle specific errors
         if "429" in str(e) or "Too Many Requests" in str(e):
-            return "Sorry, the system is currently experiencing high demand. Please try again in a few moments.", None
+            return "Lo siento, el sistema está experimentando una alta demanda en este momento. Por favor, inténtalo de nuevo en unos instantes.", None
         elif "Conversation not found" in str(e):
-            return "Sorry, the previous conversation has expired. Please try your query again to start a new conversation.", None
+            return "Lo siento, la conversación anterior ha expirado. Vuelve a enviar tu consulta para iniciar una nueva conversación.", None
         else:
             logger.error(f"Error continuing conversation: {str(e)}")
-            return f"Sorry, an error occurred: {str(e)}", None
+            return f"Lo siento, se ha producido un error: {str(e)}", None
 
 def process_genie_response(
     client: GenieClient,
@@ -383,7 +383,7 @@ def process_genie_response(
     if complete_message.content is not None:
         return complete_message.content, None
 
-    return "No response available", None
+    return "No hay respuesta disponible", None
 
 def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
@@ -403,5 +403,5 @@ def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.Data
         return result, query_text
             
     except Exception as e:
-        logger.error(f"Error in conversation: {str(e)}. Please try again.")
-        return f"Sorry, an error occurred: {str(e)}. Please try again.", None
+        logger.error(f"Error in conversation: {str(e)}. Por favor, inténtalo de nuevo.")
+        return f"Lo siento, se ha producido un error: {str(e)}. Por favor, inténtalo de nuevo.", None

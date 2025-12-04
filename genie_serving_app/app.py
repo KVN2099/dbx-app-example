@@ -36,7 +36,7 @@ app.layout = html.Div([
                 ], id="new-chat-button", className="nav-button",disabled=False),
                 html.Button([
                     html.Img(src="assets/plus_icon.svg", className="new-chat-icon"),
-                    html.Div("New chat", className="new-chat-text")
+                    html.Div("Nuevo chat", className="new-chat-text")
                 ], id="sidebar-new-chat-button", className="new-chat-button",disabled=False)
             ], id="nav-left", className="nav-left"),
             
@@ -83,11 +83,11 @@ app.layout = html.Div([
                         html.Div(id="welcome-title", className="welcome-message", children=config.welcome_title),
                         html.Button([
                             html.Img(src="assets/settings_icon.svg", className="settings-icon"),
-                            html.Div("Customize welcome message", className="button-tooltip")
+                            html.Div("Personalizar mensaje de bienvenida", className="button-tooltip")
                         ],
                         id="edit-welcome-button",
                         className="edit-welcome-button",
-                        title="Customize welcome message")
+                        title="Personalizar mensaje de bienvenida")
                     ], className="welcome-title-container"),
                     
                     html.Div(id="welcome-description", 
@@ -96,75 +96,75 @@ app.layout = html.Div([
                     
                     # Add modal for editing welcome text
                     dbc.Modal([
-                        dbc.ModalHeader(dbc.ModalTitle("Customize Welcome Message")),
+                        dbc.ModalHeader(dbc.ModalTitle("Personalizar mensaje de bienvenida")),
                         dbc.ModalBody([
                             html.Div([
-                                html.Label("Welcome Title", className="modal-label"),
+                                html.Label("Título de bienvenida", className="modal-label"),
                                 dbc.Input(
                                     id="welcome-title-input",
                                     type="text",
-                                    placeholder="Enter a title for your welcome message",
+                                    placeholder="Introduce un título para tu mensaje de bienvenida",
                                     className="modal-input"
                                 ),
                                 html.Small(
-                                    "This title appears at the top of your welcome screen",
+                                    "Este título aparece en la parte superior de la pantalla de bienvenida",
                                     className="text-muted d-block mt-1"
                                 )
                             ], className="modal-input-group"),
                             html.Div([
-                                html.Label("Welcome Description", className="modal-label"),
+                                html.Label("Descripción de bienvenida", className="modal-label"),
                                 dbc.Textarea(
                                     id="welcome-description-input",
-                                    placeholder="Enter a description that helps users understand the purpose of your application",
+                                    placeholder="Introduce una descripción que ayude a los usuarios a entender el propósito de tu aplicación",
                                     className="modal-input",
                                     style={"height": "80px"}
                                 ),
                                 html.Small(
-                                    "This description appears below the title and helps guide your users",
+                                    "Esta descripción aparece debajo del título y ayuda a guiar a tus usuarios",
                                     className="text-muted d-block mt-1"
                                 )
                             ], className="modal-input-group"),
                             html.Div([
-                                html.Label("Suggestion Questions", className="modal-label"),
+                                html.Label("Preguntas sugeridas", className="modal-label"),
                                 html.Small(
-                                    "Customize the four suggestion questions that appear on the welcome screen",
+                                    "Personaliza las cuatro preguntas sugeridas que aparecen en la pantalla de bienvenida",
                                     className="text-muted d-block mb-3"
                                 ),
                                 dbc.Input(
                                     id="suggestion-1-input",
                                     type="text",
-                                    placeholder="First suggestion question",
+                                    placeholder="Primera pregunta sugerida",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-2-input",
                                     type="text",
-                                    placeholder="Second suggestion question",
+                                    placeholder="Segunda pregunta sugerida",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-3-input",
                                     type="text",
-                                    placeholder="Third suggestion question",
+                                    placeholder="Tercera pregunta sugerida",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-4-input",
                                     type="text",
-                                    placeholder="Fourth suggestion question",
+                                    placeholder="Cuarta pregunta sugerida",
                                     className="modal-input"
                                 )
                             ], className="modal-input-group")
                         ]),
                         dbc.ModalFooter([
                             dbc.Button(
-                                "Cancel",
+                                "Cancelar",
                                 id="close-modal",
                                 className="modal-button",
                                 color="light"
                             ),
                             dbc.Button(
-                                "Save Changes",
+                                "Guardar cambios",
                                 id="save-welcome-text",
                                 className="modal-button-primary",
                                 color="primary"
@@ -218,7 +218,7 @@ app.layout = html.Div([
                             disabled=False
                         )
                     ], className="input-buttons-right"),
-                    html.Div("You can only submit one query at a time", 
+                    html.Div("Solo puedes enviar una consulta a la vez", 
                             id="query-tooltip", 
                             className="query-tooltip hidden")
                 ], id="fixed-input-container", className="fixed-input-container"),
@@ -261,10 +261,10 @@ def call_llm_for_insights(df, prompt=None):
     """
     if prompt is None:
         prompt = (
-            "You are a professional data analyst. Given the following table data, "
-            "provide deep, actionable analysis for 1. Key insights and trends 2. Notable patterns and" 
-            " anomalies 3. Business implications."
-            "Be thorough, professional, and concise.\n\n"
+            "Eres un analista de datos profesional. Dada la siguiente tabla de datos, "
+            "proporciona un análisis profundo y accionable para: 1) Principales insights y tendencias, "
+            "2) Patrones y anomalías destacadas, 3) Implicaciones de negocio. "
+            "Responde en español, de forma profesional y concisa.\n\n"
         )
     csv_data = df.to_csv(index=False)
     full_prompt = f"{prompt}Table data:\n{csv_data}"
@@ -338,7 +338,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
     user_message = html.Div([
         html.Div([
             html.Div("Y", className="user-avatar"),
-            html.Span("You", className="model-name")
+            html.Span("Tú", className="model-name")
         ], className="user-info"),
         html.Div(user_input, className="message-text")
     ], className="user-message message")
@@ -350,7 +350,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
     thinking_indicator = html.Div([
         html.Div([
             html.Span(className="spinner"),
-            html.Span("Thinking...")
+            html.Span("Pensando...")
         ], className="thinking-indicator")
     ], className="bot-message message")
     
@@ -493,7 +493,7 @@ def get_model_response(trigger_data, current_messages, chat_history):
                 # ], id={"type": "query-section", "index": query_index}, className="query-section")
             
             insight_button = html.Button(
-                "Generate Insights",
+                "Generar insights",
                 id={"type": "insight-button", "index": f"table-{len(chat_history)}"},
                 className="insight-button",
                 style={"border": "none", "background": "#f0f0f0", "padding": "8px 16px", "borderRadius": "4px", "cursor": "pointer"}
@@ -545,7 +545,7 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": ""}, False
         
     except Exception as e:
-        error_msg = f"Sorry, I encountered an error: {str(e)}. Please try again later."
+        error_msg = f"Lo siento, se ha producido un error: {str(e)}. Por favor, inténtalo de nuevo más tarde."
         error_response = html.Div([
             html.Div([
                 html.Div(className="model-avatar"),
@@ -738,8 +738,8 @@ def handle_feedback(up_clicks, down_clicks, up_class, down_class):
 )
 def toggle_query_visibility(n_clicks):
     if n_clicks % 2 == 1:
-        return "query-code-container visible", "Hide code"
-    return "query-code-container hidden", "Show code"
+        return "query-code-container visible", "Ocultar código"
+    return "query-code-container hidden", "Mostrar código"
 
 # Add callbacks for welcome text customization
 @app.callback(

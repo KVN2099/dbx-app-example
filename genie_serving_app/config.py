@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 
 
 DEFAULT_SUGGESTIONS: List[str] = [
-    "What datasets are available and how are they related? Give me a brief summary.",
-    "Show the top 10 records from a representative table.",
-    "What are key trends or patterns I should know about?",
-    "Generate a quick overview of recent changes in the data.",
+    "¿Qué conjuntos de datos hay disponibles y cómo se relacionan? Dame un breve resumen.",
+    "Muestra los 10 registros principales de una tabla representativa.",
+    "¿Cuáles son las principales tendencias o patrones que debería conocer?",
+    "Genera una descripción rápida de los cambios recientes en los datos.",
 ]
 
 
@@ -22,16 +22,16 @@ class AppConfig(BaseModel):
     """
 
     # Branding and labels
-    brand_title: str = Field(default="AI Assistant")
-    sidebar_header_text: str = Field(default="Your conversations")
-    model_display_name: str = Field(default="Assistant")
+    brand_title: str = Field(default="Asistente de IA")
+    sidebar_header_text: str = Field(default="Tus conversaciones")
+    model_display_name: str = Field(default="Asistente")
     user_display_initial: str = Field(default="Y")
-    logout_label: str = Field(default="Logout")
+    logout_label: str = Field(default="Cerrar sesión")
 
     # Welcome content
-    welcome_title: str = Field(default="Welcome to your data assistant")
+    welcome_title: str = Field(default="Bienvenido a tu asistente de datos")
     welcome_description: str = Field(
-        default="Ask questions, explore datasets, and generate insights."
+        default="Haz preguntas, explora conjuntos de datos y genera insights."
     )
 
     # Suggestions: can be overridden via env var, otherwise use generic suggestions
@@ -40,9 +40,9 @@ class AppConfig(BaseModel):
     )
 
     # Input/UX text
-    input_placeholder: str = Field(default="Ask your question...")
+    input_placeholder: str = Field(default="Haz tu pregunta...")
     disclaimer_text: str = Field(
-        default="Always review the accuracy of responses."
+        default="Revisa siempre la exactitud de las respuestas."
     )
 
     @classmethod
@@ -54,27 +54,27 @@ class AppConfig(BaseModel):
         while now benefiting from Pydantic's validation and `.model_dump()` helpers.
         """
         return cls(
-            brand_title=os.environ.get("APP_BRAND_TITLE", "AI Assistant"),
+            brand_title=os.environ.get("APP_BRAND_TITLE", "Asistente de IA"),
             sidebar_header_text=os.environ.get(
-                "SIDEBAR_HEADER_TEXT", "Your conversations"
+                "SIDEBAR_HEADER_TEXT", "Tus conversaciones"
             ),
-            model_display_name=os.environ.get("MODEL_DISPLAY_NAME", "Assistant"),
+            model_display_name=os.environ.get("MODEL_DISPLAY_NAME", "Asistente"),
             user_display_initial=os.environ.get("USER_DISPLAY_INITIAL", "Y"),
-            logout_label=os.environ.get("LOGOUT_LABEL", "Logout"),
+            logout_label=os.environ.get("LOGOUT_LABEL", "Cerrar sesión"),
             welcome_title=os.environ.get(
-                "WELCOME_TITLE", "Welcome to your data assistant"
+                "WELCOME_TITLE", "Bienvenido a tu asistente de datos"
             ),
             welcome_description=os.environ.get(
                 "WELCOME_DESCRIPTION",
-                "Ask questions, explore datasets, and generate insights.",
+                "Haz preguntas, explora conjuntos de datos y genera insights.",
             ),
             suggestions=cls._load_suggestions_from_env() or DEFAULT_SUGGESTIONS,
             input_placeholder=os.environ.get(
-                "INPUT_PLACEHOLDER", "Ask your question..."
+                "INPUT_PLACEHOLDER", "Haz tu pregunta..."
             ),
             disclaimer_text=os.environ.get(
                 "DISCLAIMER_TEXT",
-                "Always review the accuracy of responses.",
+                "Revisa siempre la exactitud de las respuestas.",
             ),
         )
 
