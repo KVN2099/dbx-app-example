@@ -4,6 +4,6 @@ command:
 
 env:
 - name: "SPACE_ID"
-  value: "01f098f400a71327bd8781d298035021"
+  value: "REPLACE_ME_GENIE_SPACE_ID"
 - name: "SERVING_ENDPOINT_NAME"
   value: "REPLACE_ME_SERVING_ENDPOINT"
