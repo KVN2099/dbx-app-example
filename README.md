@@ -49,7 +49,7 @@ Cursor (and `python-dotenv` in `app.py` / `genie_room.py` / `token_minter.py`) w
 
 ### 2. Configure the GitHub MCP server in Cursor
 
-This project is intended to be **AI‑operated via Cursor** using a **GitHub MCP server**:
+This project is intended to be **AI‑operated via Cursor** using a **GitHub MCP server** (see the official install guide [Install GitHub MCP Server in Cursor](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-cursor.md)):
 
 - In **Cursor → Settings → MCP**:
   - **Enable the GitHub MCP server** (if not already).
@@ -68,8 +68,8 @@ This lets you “vibe code” the app by asking the agent to:
 To get **high‑quality inline help** while you tweak the app:
 
 - In **Cursor → Settings → Indexing / Docs** (names may vary slightly by version):
-  - **Add the Databricks CLI / Databricks documentation** as a documentation source:
-    - Databricks CLI & SDK docs.
+  - **Add the Databricks CLI / Databricks documentation** as a documentation source**, for example the Databricks CLI reference [Databricks CLI commands](https://docs.databricks.com/aws/en/dev-tools/cli/commands):
+    - Databricks CLI & SDK docs (including the CLI command reference above).
     - Databricks Apps and Genie Space docs.
   - Ensure Cursor is allowed to **use those docs** while working in this project.
 
