@@ -1,28 +1,104 @@
-import pandas as pd
-import time
-import requests
-import os
-from dotenv import load_dotenv
-from typing import Dict, Any, Optional, Union, Tuple
 import logging
+import os
+import time
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import backoff
+import pandas as pd
+import requests
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
 from token_minter import TokenMinter, TokenMinterConfig
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# Load environment variables
-SPACE_ID = os.environ.get("SPACE_ID")
-DATABRICKS_HOST = os.environ.get("DATABRICKS_HOST")
-CLIENT_ID = os.environ.get("DATABRICKS_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("DATABRICKS_CLIENT_SECRET")
 
-token_minter_config = TokenMinterConfig(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    host=DATABRICKS_HOST,
-)
+class GenieEnvConfig(BaseModel):
+    """
+    Configuration for Genie API access loaded from environment variables.
+    """
+
+    space_id: str = Field(..., description="Genie space identifier")
+    host: str = Field(..., description="Databricks workspace hostname (without scheme)")
+
+    @classmethod
+    def from_env(cls) -> "GenieEnvConfig":
+        return cls(
+            space_id=os.environ.get("SPACE_ID"),
+            host=os.environ.get("DATABRICKS_HOST"),
+        )
+
+
+class GenieAttachmentText(BaseModel):
+    content: Optional[str] = None
+
+
+class GenieAttachmentQuery(BaseModel):
+    query: Optional[str] = None
+
+
+class GenieAttachment(BaseModel):
+    attachment_id: Optional[str] = None
+    text: Optional[GenieAttachmentText] = None
+    query: Optional[GenieAttachmentQuery] = None
+
+    class Config:
+        extra = "allow"
+
+
+class GenieMessage(BaseModel):
+    """
+    Pydantic representation of a Genie message payload.
+    """
+
+    message_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+    status: Optional[str] = None
+    content: Optional[str] = None
+    attachments: Optional[List[GenieAttachment]] = None
+
+    class Config:
+        extra = "allow"
+
+
+class GenieStartConversationResponse(BaseModel):
+    """
+    Minimal fields returned when starting a conversation.
+    """
+
+    conversation_id: str
+    message_id: str
+
+    class Config:
+        extra = "allow"
+
+
+class GenieQueryResult(BaseModel):
+    """
+    Wrapper around the Genie query result payload to make access safer.
+    """
+
+    statement_response: Dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def data_array(self) -> List[Any]:
+        return self.statement_response.get("result", {}).get("data_array", []) or []
+
+    @property
+    def schema(self) -> Dict[str, Any]:
+        return self.statement_response.get("manifest", {}).get("schema", {}) or {}
+
+
+# Initialize configuration using Pydantic
+env_config = GenieEnvConfig.from_env()
+SPACE_ID = env_config.space_id
+DATABRICKS_HOST = env_config.host
+
+token_minter_config = TokenMinterConfig.from_env()
 token_minter = TokenMinter(config=token_minter_config)
 
 
@@ -51,7 +127,7 @@ class GenieClient:
             f"API request failed. Retrying in {details['wait']:.2f} seconds (attempt {details['tries']})"
         )
     )
-    def start_conversation(self, question: str) -> Dict[str, Any]:
+    def start_conversation(self, question: str) -> GenieStartConversationResponse:
         """Start a new conversation with the given question"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/start-conversation"
@@ -59,7 +135,7 @@ class GenieClient:
         
         response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()
+        return GenieStartConversationResponse.parse_obj(response.json())
     
     @backoff.on_exception(
         backoff.expo,
@@ -71,7 +147,7 @@ class GenieClient:
             f"API request failed. Retrying in {details['wait']:.2f} seconds (attempt {details['tries']})"
         )
     )
-    def send_message(self, conversation_id: str, message: str) -> Dict[str, Any]:
+    def send_message(self, conversation_id: str, message: str) -> GenieMessage:
         """Send a follow-up message to an existing conversation"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages"
@@ -79,7 +155,7 @@ class GenieClient:
         
         response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()
+        return GenieMessage.parse_obj(response.json())
 
     @backoff.on_exception(
         backoff.expo,
@@ -91,14 +167,14 @@ class GenieClient:
             f"API request failed. Retrying in {details['wait']:.2f} seconds (attempt {details['tries']})"
         )
     )
-    def get_message(self, conversation_id: str, message_id: str) -> Dict[str, Any]:
+    def get_message(self, conversation_id: str, message_id: str) -> GenieMessage:
         """Get the details of a specific message"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}"
         
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        return GenieMessage.parse_obj(response.json())
 
     @backoff.on_exception(
         backoff.expo,
@@ -117,18 +193,13 @@ class GenieClient:
         
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
-        result = response.json()
-        
-        # Extract data_array from the correct nested location
-        data_array = []
-        if 'statement_response' in result:
-            if 'result' in result['statement_response']:
-                data_array = result['statement_response']['result'].get('data_array', [])
-            
+        parsed = GenieQueryResult.parse_obj(response.json())
+
+        # Maintain the original return structure while leveraging Pydantic parsing
         return {
-                    'data_array': data_array,
-                    'schema': result.get('statement_response', {}).get('manifest', {}).get('schema', {})
-                }
+            "data_array": parsed.data_array,
+            "schema": parsed.schema,
+        }
 
     @backoff.on_exception(
         backoff.expo,
@@ -150,7 +221,7 @@ class GenieClient:
         return response.json()
     
 
-    def wait_for_message_completion(self, conversation_id: str, message_id: str, timeout: int = 300, poll_interval: int = 2) -> Dict[str, Any]:
+    def wait_for_message_completion(self, conversation_id: str, message_id: str, timeout: int = 300, poll_interval: int = 2) -> GenieMessage:
         """
         Wait for a message to reach a terminal state (COMPLETED, ERROR, etc.).
         
@@ -168,10 +239,9 @@ class GenieClient:
         attempt = 1
         
         while time.time() - start_time < timeout:
-            
             message = self.get_message(conversation_id, message_id)
-            status = message.get("status")
-            
+            status = message.status
+
             if status in ["COMPLETED", "ERROR", "FAILED"]:
                 return message
                 
@@ -196,14 +266,14 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID
+        space_id=SPACE_ID,
     )
     
     try:
         # Start a new conversation
         response = client.start_conversation(question)
-        conversation_id = response.get("conversation_id")
-        message_id = response.get("message_id")
+        conversation_id = response.conversation_id
+        message_id = response.message_id
         
         # Wait for the message to complete
         complete_message = client.wait_for_message_completion(conversation_id, message_id)
@@ -239,7 +309,7 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     try:
         # Send follow-up message in existing conversation
         response = client.send_message(conversation_id, question)
-        message_id = response.get("message_id")
+        message_id = response.message_id
         
         # Wait for the message to complete
         complete_message = client.wait_for_message_completion(conversation_id, message_id)
@@ -259,7 +329,12 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
             logger.error(f"Error continuing conversation: {str(e)}")
             return f"Sorry, an error occurred: {str(e)}", None
 
-def process_genie_response(client, conversation_id, message_id, complete_message) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
+def process_genie_response(
+    client: GenieClient,
+    conversation_id: str,
+    message_id: str,
+    complete_message: GenieMessage,
+) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
     Process the response from Genie
     
@@ -275,36 +350,39 @@ def process_genie_response(client, conversation_id, message_id, complete_message
         - query_text: SQL query text if applicable, otherwise None
     """
     # Check attachments first
-    attachments = complete_message.get("attachments", [])
+    attachments = complete_message.attachments or []
     for attachment in attachments:
-        attachment_id = attachment.get("attachment_id")
-        
+        attachment_id = attachment.attachment_id
+
         # If there's text content in the attachment, return it
-        if "text" in attachment and "content" in attachment["text"]:
-            return attachment["text"]["content"], None
-        
+        if attachment.text and attachment.text.content:
+            return attachment.text.content, None
+
         # If there's a query, get the result
-        elif "query" in attachment:
-            query_text = attachment.get("query", {}).get("query", "")
+        if attachment.query:
+            query_text = attachment.query.query or ""
+            if not attachment_id:
+                continue
+
             query_result = client.get_query_result(conversation_id, message_id, attachment_id)
-           
-            data_array = query_result.get('data_array', [])
-            schema = query_result.get('schema', {})
-            columns = [col.get('name') for col in schema.get('columns', [])]
-            
+
+            data_array = query_result.get("data_array", [])
+            schema = query_result.get("schema", {})
+            columns = [col.get("name") for col in schema.get("columns", [])]
+
             # If we have data, return as DataFrame
             if data_array:
                 # If no columns from schema, create generic ones
                 if not columns and data_array and len(data_array) > 0:
                     columns = [f"column_{i}" for i in range(len(data_array[0]))]
-                
+
                 df = pd.DataFrame(data_array, columns=columns)
                 return df, query_text
-    
+
     # If no attachments or no data in attachments, return text content
-    if 'content' in complete_message:
-        return complete_message.get('content', ''), None
-    
+    if complete_message.content is not None:
+        return complete_message.content, None
+
     return "No response available", None
 
 def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:

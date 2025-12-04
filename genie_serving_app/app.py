@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, callback_context, no_update, clientside_callback, dash_table
+from dash import html, dcc, Input, Output, State, ALL, MATCH, callback_context, no_update, dash_table
 import dash_bootstrap_components as dbc
 import json
 from genie_room import genie_query
