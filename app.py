@@ -7,8 +7,6 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import sqlparse
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 from config import AppConfig
 load_dotenv()
 
@@ -36,7 +34,7 @@ app.layout = html.Div([
                 ], id="new-chat-button", className="nav-button",disabled=False),
                 html.Button([
                     html.Img(src="assets/plus_icon.svg", className="new-chat-icon"),
-                    html.Div("Nuevo chat", className="new-chat-text")
+                    html.Div("New chat", className="new-chat-text")
                 ], id="sidebar-new-chat-button", className="new-chat-button",disabled=False)
             ], id="nav-left", className="nav-left"),
             
@@ -83,11 +81,11 @@ app.layout = html.Div([
                         html.Div(id="welcome-title", className="welcome-message", children=config.welcome_title),
                         html.Button([
                             html.Img(src="assets/settings_icon.svg", className="settings-icon"),
-                            html.Div("Personalizar mensaje de bienvenida", className="button-tooltip")
+                            html.Div("Customize welcome message", className="button-tooltip")
                         ],
                         id="edit-welcome-button",
                         className="edit-welcome-button",
-                        title="Personalizar mensaje de bienvenida")
+                        title="Customize welcome message")
                     ], className="welcome-title-container"),
                     
                     html.Div(id="welcome-description", 
@@ -96,75 +94,75 @@ app.layout = html.Div([
                     
                     # Add modal for editing welcome text
                     dbc.Modal([
-                        dbc.ModalHeader(dbc.ModalTitle("Personalizar mensaje de bienvenida")),
+                        dbc.ModalHeader(dbc.ModalTitle("Customize Welcome Message")),
                         dbc.ModalBody([
                             html.Div([
-                                html.Label("Título de bienvenida", className="modal-label"),
+                                html.Label("Welcome Title", className="modal-label"),
                                 dbc.Input(
                                     id="welcome-title-input",
                                     type="text",
-                                    placeholder="Introduce un título para tu mensaje de bienvenida",
+                                    placeholder="Enter a title for your welcome message",
                                     className="modal-input"
                                 ),
                                 html.Small(
-                                    "Este título aparece en la parte superior de la pantalla de bienvenida",
+                                    "This title appears at the top of your welcome screen",
                                     className="text-muted d-block mt-1"
                                 )
                             ], className="modal-input-group"),
                             html.Div([
-                                html.Label("Descripción de bienvenida", className="modal-label"),
+                                html.Label("Welcome Description", className="modal-label"),
                                 dbc.Textarea(
                                     id="welcome-description-input",
-                                    placeholder="Introduce una descripción que ayude a los usuarios a entender el propósito de tu aplicación",
+                                    placeholder="Enter a description that helps users understand the purpose of your application",
                                     className="modal-input",
                                     style={"height": "80px"}
                                 ),
                                 html.Small(
-                                    "Esta descripción aparece debajo del título y ayuda a guiar a tus usuarios",
+                                    "This description appears below the title and helps guide your users",
                                     className="text-muted d-block mt-1"
                                 )
                             ], className="modal-input-group"),
                             html.Div([
-                                html.Label("Preguntas sugeridas", className="modal-label"),
+                                html.Label("Suggestion Questions", className="modal-label"),
                                 html.Small(
-                                    "Personaliza las cuatro preguntas sugeridas que aparecen en la pantalla de bienvenida",
+                                    "Customize the four suggestion questions that appear on the welcome screen",
                                     className="text-muted d-block mb-3"
                                 ),
                                 dbc.Input(
                                     id="suggestion-1-input",
                                     type="text",
-                                    placeholder="Primera pregunta sugerida",
+                                    placeholder="First suggestion question",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-2-input",
                                     type="text",
-                                    placeholder="Segunda pregunta sugerida",
+                                    placeholder="Second suggestion question",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-3-input",
                                     type="text",
-                                    placeholder="Tercera pregunta sugerida",
+                                    placeholder="Third suggestion question",
                                     className="modal-input mb-2"
                                 ),
                                 dbc.Input(
                                     id="suggestion-4-input",
                                     type="text",
-                                    placeholder="Cuarta pregunta sugerida",
+                                    placeholder="Fourth suggestion question",
                                     className="modal-input"
                                 )
                             ], className="modal-input-group")
                         ]),
                         dbc.ModalFooter([
                             dbc.Button(
-                                "Cancelar",
+                                "Cancel",
                                 id="close-modal",
                                 className="modal-button",
                                 color="light"
                             ),
                             dbc.Button(
-                                "Guardar cambios",
+                                "Save Changes",
                                 id="save-welcome-text",
                                 className="modal-button-primary",
                                 color="primary"
@@ -218,7 +216,7 @@ app.layout = html.Div([
                             disabled=False
                         )
                     ], className="input-buttons-right"),
-                    html.Div("Solo puedes enviar una consulta a la vez", 
+                    html.Div("You can only submit one query at a time", 
                             id="query-tooltip", 
                             className="query-tooltip hidden")
                 ], id="fixed-input-container", className="fixed-input-container"),
@@ -249,36 +247,6 @@ def format_sql_query(sql_query):
         comma_first=False      # Commas at the end of line, not beginning
     )
     return formatted_sql
-
-def call_llm_for_insights(df, prompt=None):
-    """
-    Call an LLM to generate insights from a DataFrame.
-    Args:
-        df: pandas DataFrame
-        prompt: Optional custom prompt
-    Returns:
-        str: Insights generated by the LLM
-    """
-    if prompt is None:
-        prompt = (
-            "Eres un analista de datos profesional. Dada la siguiente tabla de datos, "
-            "proporciona un análisis profundo y accionable para: 1) Principales insights y tendencias, "
-            "2) Patrones y anomalías destacadas, 3) Implicaciones de negocio. "
-            "Responde en español, de forma profesional y concisa.\n\n"
-        )
-    csv_data = df.to_csv(index=False)
-    full_prompt = f"{prompt}Table data:\n{csv_data}"
-    # Call OpenAI (replace with your own LLM provider as needed)
-    try:
-        client = WorkspaceClient()
-        response = client.serving_endpoints.query(
-            os.getenv("SERVING_ENDPOINT_NAME"),
-            messages=[ChatMessage(content=full_prompt, role=ChatMessageRole.USER)],
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error generating insights: {str(e)}"
-    
 
 # First callback: Handle inputs and show thinking indicator
 @app.callback(
@@ -338,7 +306,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
     user_message = html.Div([
         html.Div([
             html.Div("Y", className="user-avatar"),
-            html.Span("Tú", className="model-name")
+            html.Span("You", className="model-name")
         ], className="user-info"),
         html.Div(user_input, className="message-text")
     ], className="user-message message")
@@ -350,7 +318,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
     thinking_indicator = html.Div([
         html.Div([
             html.Span(className="spinner"),
-            html.Span("Pensando...")
+            html.Span("Thinking...")
         ], className="thinking-indicator")
     ], className="bot-message message")
     
@@ -421,12 +389,6 @@ def get_model_response(trigger_data, current_messages, chat_history):
             # Data table response
             df = pd.DataFrame(response)
             
-            # Store the DataFrame in chat_history for later retrieval by insight button
-            if chat_history and len(chat_history) > 0:
-                chat_history[0].setdefault('dataframes', {})[f"table-{len(chat_history)}"] = df.to_json(orient='split')
-            else:
-                chat_history = [{"dataframes": {f"table-{len(chat_history)}": df.to_json(orient='split')}}]
-            
             # Create the table with adjusted styles
             data_table = dash_table.DataTable(
                 id=f"table-{len(chat_history)}",
@@ -492,28 +454,13 @@ def get_model_response(trigger_data, current_messages, chat_history):
                 #     className="query-code-container hidden")
                 # ], id={"type": "query-section", "index": query_index}, className="query-section")
             
-            insight_button = html.Button(
-                "Generar insights",
-                id={"type": "insight-button", "index": f"table-{len(chat_history)}"},
-                className="insight-button",
-                style={"border": "none", "background": "#f0f0f0", "padding": "8px 16px", "borderRadius": "4px", "cursor": "pointer"}
-            )
-            insight_output = dcc.Loading(
-                id={"type": "insight-loading", "index": f"table-{len(chat_history)}"},
-                type="circle",
-                color="#000000",
-                children=html.Div(id={"type": "insight-output", "index": f"table-{len(chat_history)}"})
-            )
-
             # Create content with table and optional SQL section
             content = html.Div([
                 html.Div([data_table], style={
                     'marginBottom': '20px',
                     'paddingRight': '5px'
                 }),
-                query_section if query_section else None,
-                insight_button,
-                insight_output,
+                query_section if query_section else None
             ])
         
         # Create bot response
@@ -545,7 +492,7 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": ""}, False
         
     except Exception as e:
-        error_msg = f"Lo siento, se ha producido un error: {str(e)}. Por favor, inténtalo de nuevo más tarde."
+        error_msg = f"Sorry, I encountered an error: {str(e)}. Please try again later."
         error_response = html.Div([
             html.Div([
                 html.Div(className="model-avatar"),
@@ -738,8 +685,8 @@ def handle_feedback(up_clicks, down_clicks, up_class, down_class):
 )
 def toggle_query_visibility(n_clicks):
     if n_clicks % 2 == 1:
-        return "query-code-container visible", "Ocultar código"
-    return "query-code-container hidden", "Mostrar código"
+        return "query-code-container visible", "Hide code"
+    return "query-code-container hidden", "Show code"
 
 # Add callbacks for welcome text customization
 @app.callback(
@@ -814,33 +761,6 @@ def handle_modal_actions(save_clicks, close_clicks,
         return [title, description, *suggestions, False]
 
     return [no_update] * 7
-
-# Add callback for insight button
-@app.callback(
-    Output({"type": "insight-output", "index": dash.dependencies.MATCH}, "children"),
-    Input({"type": "insight-button", "index": dash.dependencies.MATCH}, "n_clicks"),
-    State({"type": "insight-button", "index": dash.dependencies.MATCH}, "id"),
-    State("chat-history-store", "data"),
-    prevent_initial_call=True
-)
-def generate_insights(n_clicks, btn_id, chat_history):
-    if not n_clicks:
-        return None  # Don't show anything before click
-    table_id = btn_id["index"]
-    # Retrieve the DataFrame from chat_history
-    df = None
-    if chat_history and len(chat_history) > 0:
-        df_json = chat_history[0].get('dataframes', {}).get(table_id)
-        if df_json:
-            df = pd.read_json(df_json, orient='split')
-    if df is None:
-        return None
-    insights = call_llm_for_insights(df)
-    return html.Div([
-        html.Div([
-            dcc.Markdown(insights, className="insight-content")
-        ], className="insight-body")
-    ], className="insight-wrapper")
 
 if __name__ == "__main__":
     app.run_server(debug=True)
