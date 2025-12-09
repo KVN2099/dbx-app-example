@@ -1,86 +1,86 @@
-## Genie Space Databricks App – Vibe‑Code Template
+## Aplicación Databricks Genie Space – Plantilla Vibe‑Code
 
-This repo is a **Genie Space–backed Databricks App template** that you can **“vibe code” from Cursor**: customize the UI copy, wiring, and behavior conversationally while the app talks to Databricks Genie.
+Este repositorio es una **plantilla de Databricks App respaldada por un Genie Space** que puedes **“vibe codear” desde Cursor**: personalizar el texto de la UI, el wiring y el comportamiento de forma conversacional mientras la aplicación se comunica con Databricks Genie.
 
-It is designed as a starter that:
-- **Wraps a Genie Space** as the core reasoning/querying engine.
-- **Exposes a modern Dash UI** that you can quickly retheme and tweak.
-- **Keeps config in env vars** so you can move between dev/stage/prod without code changes.
-- **Plays nicely with Cursor + GitHub MCP** for “AI-native” development and documentation.
+Está diseñada como un punto de partida que:
+- **Envuelve un Genie Space** como motor principal de razonamiento/consultas.
+- **Expone una UI moderna en Dash** que puedes retocar y re‑tematizar rápidamente.
+- **Mantiene la configuración en variables de entorno** para pasar entre dev/stage/prod sin cambios de código.
+- **Se integra bien con Cursor + GitHub MCP** para un desarrollo y documentación “AI‑nativos”.
 
 ---
 
-## Project Structure
+## Estructura del proyecto
 
 - **Root**
-  - **`README.md`**: This file – high‑level docs, setup, and usage.
-  - **`dbx_apps_instructions.md`**: Shared **Databricks Apps best practices** – config, security, UC usage, and deployment guidance for all apps in this workspace.
-  - **`genie_serving_app/`**: The actual Genie Space app implementation (Dash UI + Genie client + config).
+  - **`README.md`**: Este archivo – documentación de alto nivel, configuración e instrucciones de uso.
+  - **`dbx_apps_instructions.md`**: **Buenas prácticas compartidas de Databricks Apps** – configuración, seguridad, uso de UC y guía de despliegue para todas las apps de este workspace.
+  - **`genie_serving_app/`**: Implementación real de la app de Genie Space (UI en Dash + cliente de Genie + configuración).
 
 - **`genie_serving_app/`**
-  - **`app.py`**: Dash **entrypoint** and main UI; wires user input to `genie_room.genie_query`, renders chat, tables, and “Generate Insights”.
-  - **`genie_room.py`**: **Genie Space client + orchestration**:
-    - Handles OAuth via `TokenMinter`.
-    - Calls the Genie Space REST APIs (start conversation, send messages, fetch query results).
-    - Normalizes responses into either **Markdown text** or **Pandas DataFrames** for the UI.
-  - **`config.py`**: Pydantic‑based **`AppConfig`** with branding, welcome text, suggestions, and UX copy loaded from env vars (with safe defaults).
-  - **`token_minter.py`**: Pydantic‑based **`TokenMinter`** that uses Databricks **OAuth client credentials** to continuously mint and refresh workspace API tokens.
-  - **`app.yaml`**: Minimal **Databricks App runtime manifest**:
-    - Specifies the command (`python app.py`) and core env var (`SPACE_ID`).
-    - Used by Databricks Apps to run this project as an app.
-  - **`requirements.txt`**: Python **runtime dependencies** for the app (Dash, backoff, etc.).
-  - **`assets/`**: Static files consumed by Dash:
-    - **`style.css`**: App‑wide styling, layout, and theme.
-    - **Icons/Images** (e.g., `genie_logo.png`, `menu_icon.svg`, `send_icon.svg`): Used for the chat UI, sidebar, and buttons.
-    - **`table*.png` / troubleshooting images**: Example screenshots and UI assets.
+  - **`app.py`**: **Punto de entrada** de Dash y UI principal; conecta la entrada del usuario con `genie_room.genie_query`, renderiza el chat, tablas y “Generate Insights”.
+  - **`genie_room.py`**: **Cliente de Genie Space + orquestación**:
+    - Gestiona OAuth mediante `TokenMinter`.
+    - Llama a las APIs REST de Genie Space (iniciar conversación, enviar mensajes, recuperar resultados de consulta).
+    - Normaliza las respuestas a **texto Markdown** o **Pandas DataFrames** para la UI.
+  - **`config.py`**: **`AppConfig`** basado en Pydantic con branding, texto de bienvenida, sugerencias y copy de UX cargados desde variables de entorno (con valores seguros por defecto).
+  - **`token_minter.py`**: **`TokenMinter`** basado en Pydantic que usa las **credenciales OAuth de cliente de Databricks** para acuñar y refrescar continuamente los tokens de API del workspace.
+  - **`app.yaml`**: **Manifiesto mínimo de runtime de Databricks App**:
+    - Especifica el comando (`python app.py`) y la variable de entorno principal (`SPACE_ID`).
+    - Usado por Databricks Apps para ejecutar este proyecto como una app.
+  - **`requirements.txt`**: **Dependencias de runtime de Python** de la app (Dash, backoff, etc.).
+  - **`assets/`**: Ficheros estáticos consumidos por Dash:
+    - **`style.css`**: Estilos globales de la app, layout y tema.
+    - **Iconos/Imágenes** (por ejemplo, `genie_logo.png`, `menu_icon.svg`, `send_icon.svg`): Usados en el chat, la barra lateral y los botones.
+    - **`table*.png` / imágenes de troubleshooting**: Ejemplos de capturas y assets de UI.
 
 ---
 
-## Setup & Usage (Cursor + Databricks + MCP)
+## Configuración y uso (Cursor + Databricks + MCP)
 
-### 1. Clone repo and create env file
+### 1. Clonar el repo y crear el fichero de entorno
 
-- **Clone the repository** to your local machine.
-- **Create an env file** in the project root (or wherever you prefer Cursor to load it from), based on a template:
-  - If you already have a `.env.example` elsewhere, **copy it here** and adapt it.
-  - Otherwise create `.env` manually with the required keys (see “Requirements & Env Vars” below).
+- **Clona el repositorio** en tu máquina local.
+- **Crea un fichero de entorno** en la raíz del proyecto (o donde prefieras que Cursor lo cargue), basado en una plantilla:
+  - Si ya tienes un `.env.example` en otro sitio, **cópialo aquí** y adáptalo.
+  - En caso contrario, crea `.env` manualmente con las claves requeridas (ver “Requisitos y variables de entorno” más abajo).
 
-Cursor (and `python-dotenv` in `app.py` / `genie_room.py` / `token_minter.py`) will load these variables when you run or debug the app.
+Cursor (y `python-dotenv` en `app.py` / `genie_room.py` / `token_minter.py`) cargará estas variables cuando ejecutes o depures la app.
 
-### 2. Configure the GitHub MCP server in Cursor
+### 2. Configurar el servidor GitHub MCP en Cursor
 
-This project is intended to be **AI‑operated via Cursor** using a **GitHub MCP server** (see the official install guide [Install GitHub MCP Server in Cursor](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-cursor.md)):
+Este proyecto está pensado para ser **operado por IA a través de Cursor** usando un **servidor GitHub MCP** (consulta la guía oficial [Install GitHub MCP Server in Cursor](https://github.com/github/github-mcp-server/blob/main/docs/installation-guides/install-cursor.md)):
 
-- In **Cursor → Settings → MCP**:
-  - **Enable the GitHub MCP server** (if not already).
-  - Make sure it has **access to this repo** so the agent can:
-    - Read/write files.
-    - Open/modify PRs.
-    - Keep docs (including this `README.md`) in sync with changes.
+- En **Cursor → Settings → MCP**:
+  - **Activa el servidor GitHub MCP** (si aún no lo está).
+  - Asegúrate de que tiene **acceso a este repo** para que el agente pueda:
+    - Leer/escribir ficheros.
+    - Abrir/modificar PRs.
+    - Mantener la documentación (incluido este `README.md`) sincronizada con los cambios.
 
-This lets you “vibe code” the app by asking the agent to:
-- Update UI copy.
-- Add new callbacks or widgets.
-- Adjust Genie wiring and backend logic.
+Esto te permite “vibe codear” la app pidiéndole al agente que:
+- Actualice el texto de la UI.
+- Añada nuevos callbacks o widgets.
+- Ajuste el wiring de Genie y la lógica de backend.
 
-### 3. Add Databricks CLI docs to indexing and Cursor docs
+### 3. Añadir la documentación de Databricks CLI al indexado y a los docs de Cursor
 
-To get **high‑quality inline help** while you tweak the app:
+Para obtener **ayuda contextual de alta calidad** mientras ajustas la app:
 
-- In **Cursor → Settings → Indexing / Docs** (names may vary slightly by version):
-  - **Add the Databricks CLI / Databricks documentation** as a documentation source**, for example the Databricks CLI reference [Databricks CLI commands](https://docs.databricks.com/aws/en/dev-tools/cli/commands):
-    - Databricks CLI & SDK docs (including the CLI command reference above).
-    - Databricks Apps and Genie Space docs.
-  - Ensure Cursor is allowed to **use those docs** while working in this project.
+- En **Cursor → Settings → Indexing / Docs** (el nombre puede variar según la versión):
+  - **Añade la documentación de Databricks CLI / Databricks** como fuente de documentación, por ejemplo la referencia de CLI [Databricks CLI commands](https://docs.databricks.com/aws/en/dev-tools/cli/commands):
+    - Documentación de Databricks CLI y SDK (incluida la referencia anterior de comandos).
+    - Documentación de Databricks Apps y Genie Space.
+  - Asegúrate de que Cursor puede **usar esa documentación** mientras trabajas en este proyecto.
 
-This helps the agent answer questions like:
-- How to configure OAuth clients.
-- How Genie Spaces endpoints and payloads look.
-- How to deploy Databricks Apps and set env vars.
+Esto ayuda al agente a responder preguntas como:
+- Cómo configurar clientes OAuth.
+- Cómo son los endpoints y payloads de Genie Spaces.
+- Cómo desplegar Databricks Apps y configurar variables de entorno.
 
-### 4. Run locally
+### 4. Ejecutar en local
 
-- Create/activate a Python env (3.10+ recommended) and install requirements:
+- Crea/activa un entorno de Python (se recomienda 3.10+) e instala las dependencias:
 
 ```bash
 cd "Test Vibe Code App"
@@ -90,140 +90,140 @@ pip install -r genie_serving_app/requirements.txt
 pip install databricks-sdk python-dotenv pandas requests pydantic
 ```
 
-- Export or ensure `.env` contains required vars (see below).
-- Run:
+- Exporta o asegúrate de que `.env` contiene las variables requeridas (ver más abajo).
+- Ejecuta:
 
 ```bash
 cd genie_serving_app
 python app.py
 ```
 
-Dash will start a local server (default `http://127.0.0.1:8050`); open it in a browser to use the chat UI.
+Dash arrancará un servidor local (por defecto `http://127.0.0.1:8050`); ábrelo en un navegador para usar la UI de chat.
 
-### 5. Deploy as a Databricks App
+### 5. Desplegar como Databricks App
 
-- Ensure `app.yaml` has the correct **`SPACE_ID`** (or override via workspace env vars).
-- Follow your workspace’s **Databricks Apps deployment flow**:
-  - Create an App pointing at this repo.
-  - Configure **env vars and secrets** in the App settings (see next section).
-  - Start the App and validate via a browser.
+- Asegúrate de que `app.yaml` tiene el **`SPACE_ID`** correcto (o sobrescríbelo mediante variables de entorno del workspace).
+- Sigue el **flujo de despliegue de Databricks Apps** de tu workspace:
+  - Crea una App apuntando a este repo.
+  - Configura **variables de entorno y secretos** en la configuración de la App (ver siguiente sección).
+  - Inicia la App y valídala desde un navegador.
 
-For more environment‑wide standards (UC, secrets, logging, etc.), refer to `dbx_apps_instructions.md`.
-
----
-
-## Requirements & Environment Variables
-
-### Python & libraries
-
-- **Python**: 3.10+ recommended.
-- **Core dependencies** (from `genie_serving_app/requirements.txt` + runtime):
-  - **Dash & ecosystem**: `dash`, `dash-bootstrap-components`, `dash-core-components`, `dash-html-components`, `dash-table`, `dash_ag_grid`, `dash_mantine_components`, `dash-leaflet`, `dash-iconify`
-  - **Infra/logic**: `backoff`, `python-dotenv`, `pydantic`, `pandas`, `requests`, `databricks-sdk`
-
-### Required env vars (minimal set)
-
-These are either:
-- Loaded from `.env` by `python-dotenv`, or
-- Set as environment variables in Databricks Apps / Jobs.
-
-- **Genie / Databricks workspace**
-  - **`DATABRICKS_HOST`**: Workspace host **without scheme**, e.g. `my-workspace.cloud.databricks.com`.
-  - **`SPACE_ID`**: Genie **Space ID** that this app talks to (also referenced in `app.yaml`).
-
-- **OAuth client (for Genie + APIs)**
-  - **`DATABRICKS_CLIENT_ID`**: OAuth client ID with access to Genie / workspace APIs.
-  - **`DATABRICKS_CLIENT_SECRET`**: OAuth client secret.
-
-- **UI / branding overrides** (all optional; fall back to defaults in `AppConfig`):
-  - **`APP_BRAND_TITLE`**: Text in the top navbar (e.g. “Genie Data Copilot”).
-  - **`SIDEBAR_HEADER_TEXT`**: Sidebar header above conversation list.
-  - **`MODEL_DISPLAY_NAME`**: Label shown next to model avatar.
-  - **`USER_DISPLAY_INITIAL`**: User avatar initial (default `"Y"`).
-  - **`LOGOUT_LABEL`**: Logout button label.
-  - **`WELCOME_TITLE`**, **`WELCOME_DESCRIPTION`**: Welcome hero text.
-  - **`DEFAULT_SUGGESTIONS`**: JSON list or `q1||q2||q3||q4` string of welcome suggestion prompts.
-  - **`INPUT_PLACEHOLDER`**, **`DISCLAIMER_TEXT`**: Input placeholder and disclaimer under the input area.
-
-### Databricks side requirements
-
-- A **Genie Space** configured with:
-  - Appropriate **tools** and **data access** for your use case.
-  - Permissions so the OAuth client can start conversations and execute queries.
+Para estándares globales de entorno (UC, secretos, logging, etc.), consulta `dbx_apps_instructions.md`.
 
 ---
 
-## File‑by‑File Overview
+## Requisitos y variables de entorno
+
+### Python y librerías
+
+- **Python**: se recomienda 3.10+.
+- **Dependencias principales** (desde `genie_serving_app/requirements.txt` + runtime):
+  - **Dash y ecosistema**: `dash`, `dash-bootstrap-components`, `dash-core-components`, `dash-html-components`, `dash-table`, `dash_ag_grid`, `dash_mantine_components`, `dash-leaflet`, `dash-iconify`
+  - **Infra/lógica**: `backoff`, `python-dotenv`, `pydantic`, `pandas`, `requests`, `databricks-sdk`
+
+### Variables de entorno requeridas (conjunto mínimo)
+
+Estas se:
+- Cargan desde `.env` mediante `python-dotenv`, o
+- Definen como variables de entorno en Databricks Apps / Jobs.
+
+- **Genie / workspace de Databricks**
+  - **`DATABRICKS_HOST`**: Host del workspace **sin esquema**, por ejemplo `my-workspace.cloud.databricks.com`.
+  - **`SPACE_ID`**: **Space ID** de Genie con el que habla esta app (también referenciado en `app.yaml`).
+  
+- **Cliente OAuth (para Genie + APIs)**
+  - **`DATABRICKS_CLIENT_ID`**: ID de cliente OAuth con acceso a Genie / APIs del workspace.
+  - **`DATABRICKS_CLIENT_SECRET`**: Secreto de cliente OAuth.
+
+- **Overrides de UI / branding** (todos opcionales; si faltan, se usan los valores por defecto de `AppConfig`):
+  - **`APP_BRAND_TITLE`**: Texto en la barra de navegación superior (por ejemplo “Genie Data Copilot”).
+  - **`SIDEBAR_HEADER_TEXT`**: Cabecera de la barra lateral sobre la lista de conversaciones.
+  - **`MODEL_DISPLAY_NAME`**: Etiqueta que se muestra junto al avatar del modelo.
+  - **`USER_DISPLAY_INITIAL`**: Inicial del avatar de usuario (por defecto `"T"`).
+  - **`LOGOUT_LABEL`**: Texto del botón de cierre de sesión.
+  - **`WELCOME_TITLE`**, **`WELCOME_DESCRIPTION`**: Texto principal de bienvenida.
+  - **`DEFAULT_SUGGESTIONS`**: Lista JSON o cadena `q1||q2||q3||q4` de prompts de sugerencias de bienvenida.
+  - **`INPUT_PLACEHOLDER`**, **`DISCLAIMER_TEXT`**: Placeholder del input y disclaimer bajo el área de entrada.
+
+### Requisitos del lado de Databricks
+
+- Un **Genie Space** configurado con:
+  - **Herramientas** y **acceso a datos** adecuados para tu caso de uso.
+  - Permisos para que el cliente OAuth pueda iniciar conversaciones y ejecutar consultas.
+
+---
+
+## Resumen archivo por archivo
 
 - **`dbx_apps_instructions.md`**
-  - Global **Databricks Apps guidelines**:
-    - Config‑first, UC‑centric, secure‑by‑default.
-    - How to use `DatabricksAppConfig` (if you introduce it here).
-    - Recommended env vars, secrets usage, logging, and deployment patterns.
-
+  - Guías globales de **Databricks Apps**:
+    - Config‑first, centrado en UC, seguro por defecto.
+    - Cómo usar `DatabricksAppConfig` (si decides introducirlo aquí).
+    - Variables de entorno recomendadas, uso de secretos, logging y patrones de despliegue.
+  
 - **`genie_serving_app/app.py`**
-  - Defines the **Dash app layout**: navbar, sidebar, welcome panel, chat history, fixed input, and modals.
-  - Implements **callback graph**:
-    - Handles suggestion buttons and free‑text input.
-    - Calls `genie_query` and renders **Markdown** or **Dash tables**.
-    - Manages sessions/chat list, thumbs‑up/down feedback, query‑running state, and welcome message customization.
-  - Handles all Genie interactions for conversational analysis and table display.
+  - Define el **layout de la app Dash**: navbar, barra lateral, panel de bienvenida, historial de chat, input fijo y modales.
+  - Implementa el **grafo de callbacks**:
+    - Maneja los botones de sugerencias y la entrada de texto libre.
+    - Llama a `genie_query` y renderiza **Markdown** o **tablas de Dash**.
+    - Gestiona sesiones/lista de chats, feedback de pulgar arriba/abajo, estado de ejecución de consultas y personalización del mensaje de bienvenida.
+  - Gestiona todas las interacciones con Genie para análisis conversacional y visualización de tablas.
 
 - **`genie_serving_app/genie_room.py`**
-  - Implements **`GenieClient`** with:
-    - Token refresh via `TokenMinter` for each call.
-    - REST methods: `start_conversation`, `send_message`, `get_message`, `get_query_result`, `execute_query`, `wait_for_message_completion`.
-  - High‑level helpers:
+  - Implementa **`GenieClient`** con:
+    - Refresco de token vía `TokenMinter` en cada llamada.
+    - Métodos REST: `start_conversation`, `send_message`, `get_message`, `get_query_result`, `execute_query`, `wait_for_message_completion`.
+  - Helpers de alto nivel:
     - `start_new_conversation`, `continue_conversation`, `genie_query`.
-    - `process_genie_response` to return **either text or a `pandas.DataFrame` + SQL**.
+    - `process_genie_response` para devolver **texto o un `pandas.DataFrame` + SQL**.
 
 - **`genie_serving_app/config.py`**
-  - Pydantic **`AppConfig`** model:
-    - Centralizes all UI copy and suggestion defaults.
-    - `from_env()` pulls values from env vars and falls back to documented defaults.
-  - Keeps the rest of the code clean by pulling branding text from a single place.
+  - Modelo Pydantic **`AppConfig`**:
+    - Centraliza todo el copy de la UI y los valores por defecto de sugerencias.
+    - `from_env()` extrae valores de variables de entorno y recurre a valores por defecto documentados si faltan.
+  - Mantiene el resto del código limpio al concentrar el texto de branding en un único lugar.
 
 - **`genie_serving_app/token_minter.py`**
-  - Pydantic **`TokenMinterConfig`** to load OAuth config (optionally with `.from_env()`).
+  - **`TokenMinterConfig`** basado en Pydantic para cargar la configuración OAuth (opcionalmente con `.from_env()`).
   - **`TokenMinter`**:
-    - Talks to `https://<DATABRICKS_HOST>/oidc/v1/token` with client credentials.
-    - Stores an access token and refreshes it automatically ~5 minutes before expiry using a lock.
-
+    - Se comunica con `https://<DATABRICKS_HOST>/oidc/v1/token` usando credenciales de cliente.
+    - Almacena un token de acceso y lo renueva automáticamente ~5 minutos antes de que caduque mediante un lock.
+  
 - **`genie_serving_app/app.yaml`**
-  - Minimal **App definition** for Databricks Apps:
-    - Runs `python app.py`.
-    - Sets **`SPACE_ID`** (overridable in the App configuration UI).
-
+  - Definición mínima de **App para Databricks Apps**:
+    - Ejecuta `python app.py`.
+    - Define **`SPACE_ID`** (puede sobrescribirse en la UI de configuración de la App).
+  
 - **`genie_serving_app/requirements.txt`**
-  - Core library versions required to run the app.
-
+  - Versiones de librerías principales necesarias para ejecutar la app.
+  
 - **`genie_serving_app/assets/`**
-  - Standard Dash static folder:
-    - `style.css` for styling.
-    - Icons and images used in the UI.
+  - Carpeta estática estándar de Dash:
+    - `style.css` para estilos.
+    - Iconos e imágenes usados en la UI.
 
 ---
 
-## “Vibe Coding” Ideas / Other Topics
+## Ideas de “Vibe Coding” / Otros temas
 
-- **Retheme the app**:
-  - Use Cursor to modify `assets/style.css` and `AppConfig` branding fields.
-  - Swap text/content (welcome prompts, disclaimers, sidebar labels) via env vars or directly in `config.py`, then ask the agent to propagate changes.
-
-- **Extend Genie behavior**:
-  - Add new buttons that call `genie_query` with pre‑baked prompts.
-  - Extend `process_genie_response` for richer table metadata or chart‑ready outputs.
-
-- **Telemetry & logging**:
-  - Hook in structured logging (JSON) in `genie_room.py` and `app.py`.
-  - Use MLflow or UC tables to track conversations/responses if you want audit or analytics.
-
-- **Deployment hardening**:
-  - Follow `dbx_apps_instructions.md` for:
-    - Environment parity (dev/stage/prod).
-    - Secrets scopes and principled access control.
-    - Health checks and smoke tests before exposing to end users.
-
-Use this README as the **single source of truth** for how the Genie Space app is wired and how to safely extend it. As you customize behavior, keep this file updated so future “vibe coding” sessions remain grounded. 
+- **Cambiar el tema de la app**:
+  - Usa Cursor para modificar `assets/style.css` y los campos de branding de `AppConfig`.
+  - Cambia el texto/contenido (prompts de bienvenida, disclaimers, etiquetas de la barra lateral) mediante variables de entorno o directamente en `config.py`, y luego pide al agente que propague los cambios.
+  
+- **Extender el comportamiento de Genie**:
+  - Añade nuevos botones que llamen a `genie_query` con prompts predefinidos.
+  - Extiende `process_genie_response` para obtener metadatos de tabla más ricos o salidas listas para gráficas.
+  
+- **Telemetría y logging**:
+  - Conecta logging estructurado (JSON) en `genie_room.py` y `app.py`.
+  - Usa MLflow o tablas en UC para seguir conversaciones/respuestas si necesitas auditoría o analítica.
+  
+- **Endurecimiento del despliegue**:
+  - Sigue `dbx_apps_instructions.md` para:
+    - Paridad entre entornos (dev/stage/prod).
+    - Scopes de secretos y control de acceso basado en principios.
+    - Health checks y smoke tests antes de exponer a usuarios finales.
+  
+Usa este README como **única fuente de verdad** sobre cómo está cableada la app de Genie Space y cómo extenderla de forma segura. A medida que personalices el comportamiento, mantén este archivo actualizado para que futuras sesiones de “vibe coding” sigan bien fundamentadas. 
 
 

@@ -6,75 +6,77 @@ from pydantic import BaseModel, Field
 
 
 DEFAULT_SUGGESTIONS: List[str] = [
-    "What datasets are available and how are they related? Give me a brief summary.",
-    "Show the top 10 records from a representative table.",
-    "What are key trends or patterns I should know about?",
-    "Generate a quick overview of recent changes in the data.",
+    "¿Qué conjuntos de datos hay disponibles y cómo se relacionan? Dame un breve resumen.",
+    "Muestra los 10 primeros registros de una tabla representativa.",
+    "¿Cuáles son las principales tendencias o patrones que debería conocer?",
+    "Genera una vista rápida de los cambios recientes en los datos.",
 ]
 
 
 class AppConfig(BaseModel):
     """
-    Centralized configuration for the Genie Serving App template.
+    Configuración centralizada para la plantilla de Genie Serving App.
 
-    Values are loaded from environment variables when using `AppConfig.from_env()`,
-    with sensible defaults for local development.
+    Los valores se cargan desde variables de entorno cuando se usa `AppConfig.from_env()`,
+    con valores predeterminados adecuados para desarrollo local.
     """
 
-    # Branding and labels
-    brand_title: str = Field(default="AI Assistant")
-    sidebar_header_text: str = Field(default="Your conversations")
-    model_display_name: str = Field(default="Assistant")
-    user_display_initial: str = Field(default="Y")
-    logout_label: str = Field(default="Logout")
+    # Branding y etiquetas
+    brand_title: str = Field(default="Asistente de IA")
+    sidebar_header_text: str = Field(default="Tus conversaciones")
+    model_display_name: str = Field(default="Asistente")
+    user_display_initial: str = Field(default="T")
+    logout_label: str = Field(default="Cerrar sesión")
 
-    # Welcome content
-    welcome_title: str = Field(default="Welcome to your data assistant")
+    # Contenido de bienvenida
+    welcome_title: str = Field(default="Bienvenido a tu asistente de datos")
     welcome_description: str = Field(
-        default="Ask questions, explore datasets, and generate insights."
+        default="Haz preguntas, explora conjuntos de datos y genera insights."
     )
 
-    # Suggestions: can be overridden via env var, otherwise use generic suggestions
+    # Sugerencias: se pueden sobrescribir vía variable de entorno; en caso contrario se usan sugerencias genéricas
     suggestions: List[str] = Field(
         default_factory=lambda: DEFAULT_SUGGESTIONS.copy()
     )
 
-    # Input/UX text
-    input_placeholder: str = Field(default="Ask your question...")
+    # Texto de entrada/UX
+    input_placeholder: str = Field(default="Haz tu pregunta...")
     disclaimer_text: str = Field(
-        default="Always review the accuracy of responses."
+        default="Revisa siempre la exactitud de las respuestas."
     )
 
     @classmethod
     def from_env(cls) -> "AppConfig":
         """
-        Build an `AppConfig` instance using environment variables as overrides.
+        Construye una instancia de `AppConfig` usando variables de entorno como
+        valores de sobreescritura.
 
-        This preserves the previous behavior where all values were read from `os.environ`
-        while now benefiting from Pydantic's validation and `.model_dump()` helpers.
+        Esto preserva el comportamiento anterior donde todos los valores se leían
+        desde `os.environ`, beneficiándose ahora de la validación de Pydantic y
+        de los métodos auxiliares como `.model_dump()`.
         """
         return cls(
-            brand_title=os.environ.get("APP_BRAND_TITLE", "AI Assistant"),
+            brand_title=os.environ.get("APP_BRAND_TITLE", "Asistente de IA"),
             sidebar_header_text=os.environ.get(
-                "SIDEBAR_HEADER_TEXT", "Your conversations"
+                "SIDEBAR_HEADER_TEXT", "Tus conversaciones"
             ),
-            model_display_name=os.environ.get("MODEL_DISPLAY_NAME", "Assistant"),
-            user_display_initial=os.environ.get("USER_DISPLAY_INITIAL", "Y"),
-            logout_label=os.environ.get("LOGOUT_LABEL", "Logout"),
+            model_display_name=os.environ.get("MODEL_DISPLAY_NAME", "Asistente"),
+            user_display_initial=os.environ.get("USER_DISPLAY_INITIAL", "T"),
+            logout_label=os.environ.get("LOGOUT_LABEL", "Cerrar sesión"),
             welcome_title=os.environ.get(
-                "WELCOME_TITLE", "Welcome to your data assistant"
+                "WELCOME_TITLE", "Bienvenido a tu asistente de datos"
             ),
             welcome_description=os.environ.get(
                 "WELCOME_DESCRIPTION",
-                "Ask questions, explore datasets, and generate insights.",
+                "Haz preguntas, explora conjuntos de datos y genera insights.",
             ),
             suggestions=cls._load_suggestions_from_env() or DEFAULT_SUGGESTIONS,
             input_placeholder=os.environ.get(
-                "INPUT_PLACEHOLDER", "Ask your question..."
+                "INPUT_PLACEHOLDER", "Haz tu pregunta..."
             ),
             disclaimer_text=os.environ.get(
                 "DISCLAIMER_TEXT",
-                "Always review the accuracy of responses.",
+                "Revisa siempre la exactitud de las respuestas.",
             ),
         )
 

@@ -19,11 +19,11 @@ load_dotenv()
 
 class GenieEnvConfig(BaseModel):
     """
-    Configuration for Genie API access loaded from environment variables.
+    Configuración para el acceso a la API de Genie cargada desde variables de entorno.
     """
 
-    space_id: str = Field(..., description="Genie space identifier")
-    host: str = Field(..., description="Databricks workspace hostname (without scheme)")
+    space_id: str = Field(..., description="Identificador del espacio de Genie")
+    host: str = Field(..., description="Nombre de host del workspace de Databricks (sin esquema)")
 
     @classmethod
     def from_env(cls) -> "GenieEnvConfig":
@@ -52,7 +52,7 @@ class GenieAttachment(BaseModel):
 
 class GenieMessage(BaseModel):
     """
-    Pydantic representation of a Genie message payload.
+    Representación Pydantic de la carga útil de un mensaje de Genie.
     """
 
     message_id: Optional[str] = None
@@ -67,7 +67,7 @@ class GenieMessage(BaseModel):
 
 class GenieStartConversationResponse(BaseModel):
     """
-    Minimal fields returned when starting a conversation.
+    Campos mínimos devueltos al iniciar una conversación.
     """
 
     conversation_id: str
@@ -79,7 +79,8 @@ class GenieStartConversationResponse(BaseModel):
 
 class GenieQueryResult(BaseModel):
     """
-    Wrapper around the Genie query result payload to make access safer.
+    Envoltorio alrededor de la carga de resultados de consulta de Genie para hacer
+    el acceso más seguro.
     """
 
     statement_response: Dict[str, Any] = Field(default_factory=dict)
@@ -111,7 +112,7 @@ class GenieClient:
         self.base_url = f"https://{host}/api/2.0/genie/spaces/{space_id}"
     
     def update_headers(self) -> None:
-        """Update headers with fresh token from token_minter"""
+        """Actualiza las cabeceras con un token fresco desde token_minter"""
         self.headers = {
             "Authorization": f"Bearer {token_minter.get_token()}",
             "Content-Type": "application/json"
@@ -128,7 +129,7 @@ class GenieClient:
         )
     )
     def start_conversation(self, question: str) -> GenieStartConversationResponse:
-        """Start a new conversation with the given question"""
+        """Inicia una nueva conversación con la pregunta proporcionada"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/start-conversation"
         payload = {"content": question}
@@ -148,7 +149,7 @@ class GenieClient:
         )
     )
     def send_message(self, conversation_id: str, message: str) -> GenieMessage:
-        """Send a follow-up message to an existing conversation"""
+        """Envía un mensaje de seguimiento a una conversación existente"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages"
         payload = {"content": message}
@@ -168,7 +169,7 @@ class GenieClient:
         )
     )
     def get_message(self, conversation_id: str, message_id: str) -> GenieMessage:
-        """Get the details of a specific message"""
+        """Obtiene los detalles de un mensaje específico"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}"
         
@@ -187,7 +188,7 @@ class GenieClient:
         )
     )
     def get_query_result(self, conversation_id: str, message_id: str, attachment_id: str) -> Dict[str, Any]:
-        """Get the query result using the attachment_id endpoint"""
+        """Obtiene el resultado de la consulta utilizando el endpoint attachment_id"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}/attachments/{attachment_id}/query-result"
         
@@ -212,7 +213,7 @@ class GenieClient:
         )
     )
     def execute_query(self, conversation_id: str, message_id: str, attachment_id: str) -> Dict[str, Any]:
-        """Execute a query using the attachment_id endpoint"""
+        """Ejecuta una consulta utilizando el endpoint attachment_id"""
         self.update_headers()  # Refresh token before API call
         url = f"{self.base_url}/conversations/{conversation_id}/messages/{message_id}/attachments/{attachment_id}/execute-query"
         
@@ -223,16 +224,16 @@ class GenieClient:
 
     def wait_for_message_completion(self, conversation_id: str, message_id: str, timeout: int = 300, poll_interval: int = 2) -> GenieMessage:
         """
-        Wait for a message to reach a terminal state (COMPLETED, ERROR, etc.).
+        Espera a que un mensaje alcance un estado terminal (COMPLETED, ERROR, etc.).
         
         Args:
-            conversation_id: The ID of the conversation
-            message_id: The ID of the message
-            timeout: Maximum time to wait in seconds
-            poll_interval: Time between status checks in seconds
+            conversation_id: ID de la conversación
+            message_id: ID del mensaje
+            timeout: Tiempo máximo de espera en segundos
+            poll_interval: Tiempo entre comprobaciones de estado en segundos
             
         Returns:
-            The completed message
+            El mensaje completado
         """
         
         start_time = time.time()
@@ -252,16 +253,16 @@ class GenieClient:
 
 def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
     """
-    Start a new conversation with Genie.
+    Inicia una nueva conversación con Genie.
     
     Args:
-        question: The initial question
+        question: La pregunta inicial
         
     Returns:
-        Tuple containing:
-        - conversation_id: The new conversation ID
-        - response: Either text or DataFrame response
-        - query_text: SQL query text if applicable, otherwise None
+        Tupla que contiene:
+        - conversation_id: El nuevo ID de conversación
+        - response: Respuesta en texto o DataFrame
+        - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
     
     client = GenieClient(
@@ -270,34 +271,34 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     )
     
     try:
-        # Start a new conversation
+        # Inicia una nueva conversación
         response = client.start_conversation(question)
         conversation_id = response.conversation_id
         message_id = response.message_id
         
-        # Wait for the message to complete
+        # Espera a que el mensaje se complete
         complete_message = client.wait_for_message_completion(conversation_id, message_id)
         
-        # Process the response
+        # Procesa la respuesta
         result, query_text = process_genie_response(client, conversation_id, message_id, complete_message)
         
         return conversation_id, result, query_text
         
     except Exception as e:
-        return None, f"Sorry, an error occurred: {str(e)}. Please try again.", None
+        return None, f"Lo siento, se ha producido un error: {str(e)}. Inténtalo de nuevo.", None
 
 def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
-    Send a follow-up message in an existing conversation.
+    Envía un mensaje de seguimiento en una conversación existente.
     
     Args:
-        conversation_id: The existing conversation ID
-        question: The follow-up question
+        conversation_id: ID de la conversación existente
+        question: Pregunta de seguimiento
         
     Returns:
-        Tuple containing:
-        - response: Either text or DataFrame response
-        - query_text: SQL query text if applicable, otherwise None
+        Tupla que contiene:
+        - response: Respuesta en texto o DataFrame
+        - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
     logger.info(f"Continuing conversation {conversation_id} with question: {question[:30]}...")
     
@@ -307,27 +308,27 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     )
     
     try:
-        # Send follow-up message in existing conversation
+        # Envía un mensaje de seguimiento en la conversación existente
         response = client.send_message(conversation_id, question)
         message_id = response.message_id
         
-        # Wait for the message to complete
+        # Espera a que el mensaje se complete
         complete_message = client.wait_for_message_completion(conversation_id, message_id)
         
-        # Process the response
+        # Procesa la respuesta
         result, query_text = process_genie_response(client, conversation_id, message_id, complete_message)
         
         return result, query_text
         
     except Exception as e:
-        # Handle specific errors
+        # Maneja errores específicos
         if "429" in str(e) or "Too Many Requests" in str(e):
-            return "Sorry, the system is currently experiencing high demand. Please try again in a few moments.", None
+            return "Lo siento, el sistema está experimentando una alta demanda. Inténtalo de nuevo en unos momentos.", None
         elif "Conversation not found" in str(e):
-            return "Sorry, the previous conversation has expired. Please try your query again to start a new conversation.", None
+            return "Lo siento, la conversación anterior ha expirado. Vuelve a enviar tu consulta para iniciar una nueva conversación.", None
         else:
             logger.error(f"Error continuing conversation: {str(e)}")
-            return f"Sorry, an error occurred: {str(e)}", None
+            return f"Lo siento, se ha producido un error: {str(e)}", None
 
 def process_genie_response(
     client: GenieClient,
@@ -336,29 +337,29 @@ def process_genie_response(
     complete_message: GenieMessage,
 ) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
-    Process the response from Genie
+    Procesa la respuesta de Genie
     
     Args:
-        client: The GenieClient instance
-        conversation_id: The conversation ID
-        message_id: The message ID
-        complete_message: The completed message response
+        client: Instancia de GenieClient
+        conversation_id: ID de la conversación
+        message_id: ID del mensaje
+        complete_message: Respuesta del mensaje completado
         
     Returns:
-        Tuple containing:
-        - result: Either text or DataFrame response
-        - query_text: SQL query text if applicable, otherwise None
+        Tupla que contiene:
+        - result: Respuesta en texto o DataFrame
+        - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
-    # Check attachments first
+    # Comprueba primero los adjuntos
     attachments = complete_message.attachments or []
     for attachment in attachments:
         attachment_id = attachment.attachment_id
 
-        # If there's text content in the attachment, return it
+        # Si hay contenido de texto en el adjunto, lo devuelve
         if attachment.text and attachment.text.content:
             return attachment.text.content, None
 
-        # If there's a query, get the result
+        # Si hay una consulta, obtiene el resultado
         if attachment.query:
             query_text = attachment.query.query or ""
             if not attachment_id:
@@ -370,38 +371,38 @@ def process_genie_response(
             schema = query_result.get("schema", {})
             columns = [col.get("name") for col in schema.get("columns", [])]
 
-            # If we have data, return as DataFrame
+            # Si tenemos datos, los devuelve como DataFrame
             if data_array:
-                # If no columns from schema, create generic ones
+                # Si no hay columnas en el esquema, crea columnas genéricas
                 if not columns and data_array and len(data_array) > 0:
                     columns = [f"column_{i}" for i in range(len(data_array[0]))]
 
                 df = pd.DataFrame(data_array, columns=columns)
                 return df, query_text
 
-    # If no attachments or no data in attachments, return text content
+    # Si no hay adjuntos o datos en los adjuntos, devuelve el contenido de texto
     if complete_message.content is not None:
         return complete_message.content, None
 
-    return "No response available", None
+    return "No hay respuesta disponible", None
 
 def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
-    Main entry point for querying Genie.
+    Punto de entrada principal para consultar a Genie.
     
     Args:
-        question: The question to ask
+        question: La pregunta que se quiere hacer
         
     Returns:
-        Tuple containing either:
-        - (text_response, None) for text responses
-        - (dataframe, sql_query) for data responses
+        Tupla que contiene:
+        - (text_response, None) para respuestas de texto
+        - (dataframe, sql_query) para respuestas con datos
     """
     try:
-        # Start a new conversation for each query
+        # Inicia una nueva conversación para cada consulta
         conversation_id, result, query_text = start_new_conversation(question)
         return result, query_text
             
     except Exception as e:
-        logger.error(f"Error in conversation: {str(e)}. Please try again.")
-        return f"Sorry, an error occurred: {str(e)}. Please try again.", None
+        logger.error(f"Error en la conversación: {str(e)}. Inténtalo de nuevo.")
+        return f"Lo siento, se ha producido un error: {str(e)}. Inténtalo de nuevo.", None

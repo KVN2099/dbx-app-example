@@ -14,19 +14,19 @@ logger = logging.getLogger(__name__)
 
 class TokenMinterConfig(BaseModel):
     """
-    Pydantic model for Databricks OAuth client configuration.
+    Modelo Pydantic para la configuración del cliente OAuth de Databricks.
     """
 
-    client_id: str = Field(..., description="Databricks OAuth client ID")
-    client_secret: str = Field(..., description="Databricks OAuth client secret")
-    host: str = Field(..., description="Databricks workspace hostname (without scheme)")
+    client_id: str = Field(..., description="ID de cliente OAuth de Databricks")
+    client_secret: str = Field(..., description="Secreto de cliente OAuth de Databricks")
+    host: str = Field(..., description="Nombre de host del workspace de Databricks (sin esquema)")
 
     @classmethod
     def from_env(cls) -> "TokenMinterConfig":
         """
-        Load configuration from environment variables.
+        Carga la configuración desde variables de entorno.
 
-        Expected variables:
+        Variables esperadas:
         - DATABRICKS_CLIENT_ID
         - DATABRICKS_CLIENT_SECRET
         - DATABRICKS_HOST
@@ -40,10 +40,10 @@ class TokenMinterConfig(BaseModel):
 
 class TokenMinter:
     """
-    Handle OAuth token generation and renewal for Databricks.
+    Gestiona la generación y renovación de tokens OAuth para Databricks.
 
-    Uses `TokenMinterConfig` (Pydantic) for configuration and
-    automatically refreshes the token before it expires.
+    Utiliza `TokenMinterConfig` (Pydantic) para la configuración y
+    actualiza el token automáticamente antes de que caduque.
     """
 
     def __init__(self, config: TokenMinterConfig):
@@ -57,7 +57,7 @@ class TokenMinter:
         self._refresh_token()
         
     def _refresh_token(self) -> None:
-        """Internal method to refresh the OAuth token"""
+        """Método interno para actualizar el token OAuth"""
         url = f"https://{self.host}/oidc/v1/token"
         auth = (self.client_id, self.client_secret)
         data = {'grant_type': 'client_credentials', 'scope': 'all-apis'}
@@ -72,20 +72,20 @@ class TokenMinter:
                 # Set expiry time to 55 minutes (slightly less than the 60-minute expiry)
                 self.expiry_time = datetime.now() + timedelta(minutes=55)
                 
-            logger.info("Successfully refreshed Databricks OAuth token")
+            logger.info("Token OAuth de Databricks actualizado correctamente")
         except Exception as e:
-            logger.error(f"Failed to refresh Databricks OAuth token: {str(e)}")
+            logger.error(f"No se pudo actualizar el token OAuth de Databricks: {str(e)}")
             raise
     
     def get_token(self) -> str:
         """
-        Get a valid token, refreshing if necessary.
+        Obtiene un token válido, actualizándolo si es necesario.
         
         Returns:
-            str: The current valid OAuth token
+            str: El token OAuth válido actual
         """
         with self.lock:
-            # Check if token is expired or about to expire (within 5 minutes)
+            # Comprueba si el token ha caducado o está a punto de caducar (en 5 minutos)
             if not self.token or not self.expiry_time or datetime.now() + timedelta(minutes=5) >= self.expiry_time:
                 self._refresh_token()
             return self.token
