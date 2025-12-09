@@ -10,6 +10,30 @@ import sqlparse
 from config import AppConfig
 load_dotenv()
 
+# Opciones de espacios de Genie disponibles para la app
+GENIE_SPACES = [
+    {
+        "label": "Productos de Cooperación",
+        "value": "01f0b3810f34181c9b561f4694316e91",
+    },
+    {
+        "label": "Operaciones e Indicadores",
+        "value": "01f0b384679814598a629ec809482273",
+    },
+    {
+        "label": "Operaciones de Préstamos",
+        "value": "01f0b37b4c24127bb0517f1bd6eed2f1",
+    },
+    {
+        "label": "Información Pública y Documentos",
+        "value": "01f0b384beb41fec93b8dccded07b2c1",
+    },
+    {
+        "label": "Adquisiciones y Procesos de Compra",
+        "value": "01f0b383bdc01c46badd5cd6f99807f0",
+    },
+]
+
 # Create Dash app
 app = dash.Dash(
     __name__,
@@ -202,6 +226,14 @@ app.layout = html.Div([
             # Input area
             html.Div([
                 html.Div([
+                    # Selector de espacio de Genie
+                    dcc.Dropdown(
+                        id="space-selector",
+                        options=[{"label": s["label"], "value": s["value"]} for s in GENIE_SPACES],
+                        value=GENIE_SPACES[0]["value"],
+                        clearable=False,
+                        className="space-selector"
+                    ),
                     dcc.Input(
                         id="chat-input-fixed",
                         placeholder=config.input_placeholder,
@@ -226,7 +258,7 @@ app.layout = html.Div([
     ], id="main-content", className="main-content"),
     
     html.Div(id='dummy-output'),
-    dcc.Store(id="chat-trigger", data={"trigger": False, "message": ""}),
+    dcc.Store(id="chat-trigger", data={"trigger": False, "message": "", "space_id": None}),
     dcc.Store(id="chat-history-store", data=[]),
     dcc.Store(id="query-running-store", data=False),
     dcc.Store(id="session-store", data={"current_session": None})
@@ -273,12 +305,13 @@ def format_sql_query(sql_query):
      State("welcome-container", "className"),
      State("chat-list", "children"),
      State("chat-history-store", "data"),
-     State("session-store", "data")],
+     State("session-store", "data"),
+     State("space-selector", "value")],
     prevent_initial_call=True
 )
 def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, submit_clicks,
                      s1_text, s2_text, s3_text, s4_text, input_value, current_messages,
-                     welcome_class, current_chat_list, chat_history, session_data):
+                     welcome_class, current_chat_list, chat_history, session_data, space_value):
     ctx = callback_context
     if not ctx.triggered:
         return [no_update] * 8
@@ -358,7 +391,7 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
         )
     
     return (updated_messages, "", "welcome-container hidden",
-            {"trigger": True, "message": user_input}, True,
+            {"trigger": True, "message": user_input, "space_id": space_value}, True,
             updated_chat_list, chat_history, session_data)
 
 # Second callback: Make API call and show response
@@ -377,11 +410,12 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     user_input = trigger_data.get("message", "")
+    space_id = trigger_data.get("space_id")
     if not user_input:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
-        response, query_text = genie_query(user_input)
+        response, query_text = genie_query(user_input, space_id=space_id)
         
         if isinstance(response, str):
             content = dcc.Markdown(response, className="message-text")

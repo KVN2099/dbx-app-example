@@ -96,6 +96,7 @@ class GenieQueryResult(BaseModel):
 
 # Initialize configuration using Pydantic
 env_config = GenieEnvConfig.from_env()
+# SPACE_ID por defecto cargado desde entorno; puede ser sobreescrito por parámetro
 SPACE_ID = env_config.space_id
 DATABRICKS_HOST = env_config.host
 
@@ -251,7 +252,10 @@ class GenieClient:
             
         raise TimeoutError(f"Message processing timed out after {timeout} seconds")
 
-def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
+def start_new_conversation(
+    question: str,
+    space_id: Optional[str] = None,
+) -> Tuple[Optional[str], Union[str, pd.DataFrame], Optional[str]]:
     """
     Inicia una nueva conversación con Genie.
     
@@ -265,9 +269,12 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
     
+    # Permite sobreescribir el SPACE_ID por defecto para hablar con distintos espacios
+    effective_space_id = space_id or SPACE_ID
+
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID,
+        space_id=effective_space_id,
     )
     
     try:
@@ -287,7 +294,11 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     except Exception as e:
         return None, f"Lo siento, se ha producido un error: {str(e)}. Inténtalo de nuevo.", None
 
-def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
+def continue_conversation(
+    conversation_id: str,
+    question: str,
+    space_id: Optional[str] = None,
+) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
     Envía un mensaje de seguimiento en una conversación existente.
     
@@ -302,9 +313,12 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     """
     logger.info(f"Continuing conversation {conversation_id} with question: {question[:30]}...")
     
+    # Permite sobreescribir el SPACE_ID por defecto para hablar con distintos espacios
+    effective_space_id = space_id or SPACE_ID
+
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID
+        space_id=effective_space_id,
     )
     
     try:
@@ -386,7 +400,10 @@ def process_genie_response(
 
     return "No hay respuesta disponible", None
 
-def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
+def genie_query(
+    question: str,
+    space_id: Optional[str] = None,
+) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, Optional[str]]]:
     """
     Punto de entrada principal para consultar a Genie.
     
@@ -399,8 +416,11 @@ def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.Data
         - (dataframe, sql_query) para respuestas con datos
     """
     try:
-        # Inicia una nueva conversación para cada consulta
-        conversation_id, result, query_text = start_new_conversation(question)
+        # Inicia una nueva conversación para cada consulta, permitiendo especificar el espacio
+        conversation_id, result, query_text = start_new_conversation(
+            question,
+            space_id=space_id,
+        )
         return result, query_text
             
     except Exception as e:
