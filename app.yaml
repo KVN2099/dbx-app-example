@@ -4,6 +4,4 @@ command:
 
 env:
 - name: "SPACE_ID"
-  # Space por defecto usado por la app (se puede cambiar según sea necesario)
-  # Actualmente configurado al espacio "Operaciones de Préstamos"
   value: "01f0b37b4c24127bb0517f1bd6eed2f1"
