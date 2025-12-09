@@ -10,6 +10,23 @@ import sqlparse
 from config import AppConfig
 load_dotenv()
 
+# --------------------------------------------------------------------------
+# Opciones de espacios Genie para el selector de la cabecera
+# --------------------------------------------------------------------------
+# Filtramos espacios sin `space_id` o con marcadores de posición para que
+# no se puedan seleccionar y evitar errores 403 por IDs inválidos.
+SPACE_OPTIONS = [
+    {
+        "label": space_cfg["label"],
+        "value": key,
+    }
+    for key, space_cfg in GENIE_SPACES.items()
+    if (space_cfg.get("space_id") or "").strip()
+    and "REPLACE_ME" not in (space_cfg.get("space_id") or "")
+]
+
+DEFAULT_SPACE_KEY = SPACE_OPTIONS[0]["value"] if SPACE_OPTIONS else None
+
 # Create Dash app
 app = dash.Dash(
     __name__,
@@ -54,12 +71,10 @@ app.layout = html.Div([
             # Selector de espacio Genie
             dcc.Dropdown(
                 id="space-selector",
-                options=[
-                    {"label": space_cfg["label"], "value": key}
-                    for key, space_cfg in GENIE_SPACES.items()
-                ],
-                value="default",
+                options=SPACE_OPTIONS,
+                value=DEFAULT_SPACE_KEY,
                 clearable=False,
+                placeholder="Selecciona un espacio" if not DEFAULT_SPACE_KEY else None,
                 className="space-selector-dropdown",
             ),
             html.Div(config.user_display_initial, className="user-avatar"),
@@ -391,9 +406,77 @@ def get_model_response(trigger_data, current_messages, chat_history, selected_sp
     user_input = trigger_data.get("message", "")
     if not user_input:
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+
+    # Si no hay espacios configurados, mostramos un mensaje claro y evitamos llamar a la API
+    if not SPACE_OPTIONS:
+        info_text = (
+            "No hay espacios de Genie configurados. "
+            "Revisa la configuración `GENIE_SPACES` en `genie_room.py`."
+        )
+        content = dcc.Markdown(info_text, className="message-text")
+
+        bot_response = html.Div([
+            html.Div([
+                html.Div(className="model-avatar"),
+                html.Span(config.model_display_name, className="model-name")
+            ], className="model-info"),
+            html.Div([
+                content,
+                html.Div([
+                    html.Div([
+                        html.Button(
+                            id={"type": "thumbs-up-button", "index": len(chat_history)},
+                            className="thumbs-up-button"
+                        ),
+                        html.Button(
+                            id={"type": "thumbs-down-button", "index": len(chat_history)},
+                            className="thumbs-down-button"
+                        )
+                    ], className="message-actions")
+                ], className="message-footer")
+            ], className="message-content")
+        ], className="bot-message message")
+
+        if chat_history and len(chat_history) > 0:
+            chat_history[0]["messages"] = current_messages[:-1] + [bot_response]
+        return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": ""}, False
+
+    # Si el usuario aún no ha seleccionado un espacio válido, mostramos indicación
+    if not selected_space:
+        info_text = (
+            "Selecciona primero un espacio de Genie en el menú desplegable "
+            "de la parte superior derecha para poder enviar consultas."
+        )
+        content = dcc.Markdown(info_text, className="message-text")
+
+        bot_response = html.Div([
+            html.Div([
+                html.Div(className="model-avatar"),
+                html.Span(config.model_display_name, className="model-name")
+            ], className="model-info"),
+            html.Div([
+                content,
+                html.Div([
+                    html.Div([
+                        html.Button(
+                            id={"type": "thumbs-up-button", "index": len(chat_history)},
+                            className="thumbs-up-button"
+                        ),
+                        html.Button(
+                            id={"type": "thumbs-down-button", "index": len(chat_history)},
+                            className="thumbs-down-button"
+                        )
+                    ], className="message-actions")
+                ], className="message-footer")
+            ], className="message-content")
+        ], className="bot-message message")
+
+        if chat_history and len(chat_history) > 0:
+            chat_history[0]["messages"] = current_messages[:-1] + [bot_response]
+        return current_messages[:-1] + [bot_response], chat_history, {"trigger": False, "message": ""}, False
     
     try:
-        # Pasamos la clave de espacio seleccionada; si es None se usará el valor por defecto
+        # Pasamos la clave de espacio seleccionada
         response, query_text = genie_query(user_input, space_key=selected_space)
         
         if isinstance(response, str):
