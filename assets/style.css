@@ -446,11 +446,20 @@ body {
     box-shadow: 0px 2px 3px -1px rgba(0, 0, 0, 0.05), 0px 1px 0px 0px rgba(0, 0, 0, 0.02);
     display: flex;
     align-items: center;
+    gap: 8px;
     transition: border-color 0.2s ease;  /* Add smooth transition */
 }
 
 .fixed-input-container:focus-within {
     border-color: #4d85af;  /* Dark blueish black color */
+}
+
+/* Genie space selector dropdown */
+.space-selector {
+    min-width: 260px;
+    max-width: 320px;
+    flex-shrink: 0;
+    font-size: 12px;
 }
 
 /* Disclaimer fixed position */
