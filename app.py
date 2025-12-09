@@ -2,7 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State, ALL, MATCH, callback_context, no_update, dash_table
 import dash_bootstrap_components as dbc
 import json
-from genie_room import genie_query
+from genie_room import genie_query, GENIE_SPACES
 import pandas as pd
 import os
 from dotenv import load_dotenv
@@ -51,6 +51,17 @@ app.layout = html.Div([
             html.Div(config.brand_title, id="logo-container", className="logo-container")
         ], className="nav-center"),
         html.Div([
+            # Selector de espacio Genie
+            dcc.Dropdown(
+                id="space-selector",
+                options=[
+                    {"label": space_cfg["label"], "value": key}
+                    for key, space_cfg in GENIE_SPACES.items()
+                ],
+                value="default",
+                clearable=False,
+                className="space-selector-dropdown",
+            ),
             html.Div(config.user_display_initial, className="user-avatar"),
             html.A(
                 html.Button(
@@ -369,10 +380,11 @@ def handle_all_inputs(s1_clicks, s2_clicks, s3_clicks, s4_clicks, send_clicks, s
      Output("query-running-store", "data", allow_duplicate=True)],
     [Input("chat-trigger", "data")],
     [State("chat-messages", "children"),
-     State("chat-history-store", "data")],
+     State("chat-history-store", "data"),
+     State("space-selector", "value")],
     prevent_initial_call=True
 )
-def get_model_response(trigger_data, current_messages, chat_history):
+def get_model_response(trigger_data, current_messages, chat_history, selected_space):
     if not trigger_data or not trigger_data.get("trigger"):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
@@ -381,7 +393,8 @@ def get_model_response(trigger_data, current_messages, chat_history):
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update
     
     try:
-        response, query_text = genie_query(user_input)
+        # Pasamos la clave de espacio seleccionada; si es None se usará el valor por defecto
+        response, query_text = genie_query(user_input, space_key=selected_space)
         
         if isinstance(response, str):
             content = dcc.Markdown(response, className="message-text")

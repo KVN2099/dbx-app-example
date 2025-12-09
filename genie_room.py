@@ -96,8 +96,69 @@ class GenieQueryResult(BaseModel):
 
 # Initialize configuration using Pydantic
 env_config = GenieEnvConfig.from_env()
+
+# Default space configuration coming from environment variables
+# This preserves the previous single-space behavior.
 SPACE_ID = env_config.space_id
 DATABRICKS_HOST = env_config.host
+
+# -----------------------------------------------------------------------------
+# Genie spaces configuration
+# -----------------------------------------------------------------------------
+# You can hardcode additional Genie space IDs here so they are available
+# in the UI for switching between spaces.
+#
+# - "default" keeps using the SPACE_ID from the environment (recommended).
+# - For "space_1", "space_2", etc., replace the `space_id` values with your
+#   actual Genie space IDs.
+#
+# Example:
+#   "space_1": {
+#       "label": "Espacio de Ventas",
+#       "space_id": "01234567-89ab-cdef-0123-456789abcdef",
+#   },
+#
+GENIE_SPACES: Dict[str, Dict[str, str]] = {
+    "default": {
+        "label": "Espacio por defecto",
+        "space_id": SPACE_ID or "",
+    },
+    "space_1": {
+        "label": "Productos de Cooperación",
+        "space_id": "01f0b3810f34181c9b561f4694316e91",
+    },
+    "space_2": {
+        "label": "Operaciones e Indicadores",
+        "space_id": "01f0b384679814598a629ec809482273",
+    },
+    "space_3": {
+        "label": "Operaciones de Préstamos",
+        "space_id": "01f0b37b4c24127bb0517f1bd6eed2f1",
+    },
+    "space_4": {
+        "label": "Información Pública y Documentos",
+        "space_id": "01f0b384beb41fec93b8dccded07b2c1",
+    },
+    "space_5": {
+        "label": "Adquisiciones y Procesos de Compra",
+        "space_id": "01f0b383bdc01c46badd5cd6f99807f0",
+    },
+}
+
+
+def resolve_space_id(space_key: Optional[str]) -> str:
+    """
+    Devuelve el space_id efectivo a utilizar a partir de una clave de espacio.
+
+    Si la clave no existe o no tiene space_id configurado, se usa SPACE_ID
+    desde las variables de entorno como valor por defecto.
+    """
+    if space_key and space_key in GENIE_SPACES:
+        candidate = GENIE_SPACES[space_key].get("space_id") or ""
+        if candidate.strip():
+            return candidate
+    # Fallback al comportamiento anterior (un solo espacio vía entorno)
+    return SPACE_ID
 
 token_minter_config = TokenMinterConfig.from_env()
 token_minter = TokenMinter(config=token_minter_config)
@@ -251,7 +312,10 @@ class GenieClient:
             
         raise TimeoutError(f"Message processing timed out after {timeout} seconds")
 
-def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame], Optional[str]]:
+def start_new_conversation(
+    question: str,
+    space_key: Optional[str] = None,
+) -> Tuple[Optional[str], Union[str, pd.DataFrame], Optional[str]]:
     """
     Inicia una nueva conversación con Genie.
     
@@ -264,10 +328,11 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
         - response: Respuesta en texto o DataFrame
         - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
-    
+    # Resuelve el espacio en el que se ejecutará la conversación
+    space_id = resolve_space_id(space_key)
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID,
+        space_id=space_id,
     )
     
     try:
@@ -287,7 +352,11 @@ def start_new_conversation(question: str) -> Tuple[str, Union[str, pd.DataFrame]
     except Exception as e:
         return None, f"Lo siento, se ha producido un error: {str(e)}. Inténtalo de nuevo.", None
 
-def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
+def continue_conversation(
+    conversation_id: str,
+    question: str,
+    space_key: Optional[str] = None,
+) -> Tuple[Union[str, pd.DataFrame], Optional[str]]:
     """
     Envía un mensaje de seguimiento en una conversación existente.
     
@@ -302,9 +371,11 @@ def continue_conversation(conversation_id: str, question: str) -> Tuple[Union[st
     """
     logger.info(f"Continuing conversation {conversation_id} with question: {question[:30]}...")
     
+    # Resuelve el espacio en el que se continuará la conversación
+    space_id = resolve_space_id(space_key)
     client = GenieClient(
         host=DATABRICKS_HOST,
-        space_id=SPACE_ID
+        space_id=space_id,
     )
     
     try:
@@ -386,7 +457,10 @@ def process_genie_response(
 
     return "No hay respuesta disponible", None
 
-def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
+def genie_query(
+    question: str,
+    space_key: Optional[str] = None,
+) -> Union[Tuple[str, Optional[str]], Tuple[pd.DataFrame, str]]:
     """
     Punto de entrada principal para consultar a Genie.
     
@@ -400,7 +474,10 @@ def genie_query(question: str) -> Union[Tuple[str, Optional[str]], Tuple[pd.Data
     """
     try:
         # Inicia una nueva conversación para cada consulta
-        conversation_id, result, query_text = start_new_conversation(question)
+        conversation_id, result, query_text = start_new_conversation(
+            question,
+            space_key=space_key,
+        )
         return result, query_text
             
     except Exception as e:
