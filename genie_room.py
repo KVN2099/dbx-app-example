@@ -479,17 +479,8 @@ def genie_query(
             space_key=space_key,
         )
 
-        # Si por alguna razón la respuesta de texto es exactamente igual a la
-        # pregunta del usuario, asumimos que algo ha ido mal y mostramos un
-        # mensaje más útil en lugar de hacer "eco" del input.
-        if isinstance(result, str) and result.strip() == (question or "").strip():
-            return (
-                "No he podido generar una respuesta diferente a tu pregunta. "
-                "Verifica que el espacio de Genie seleccionado tiene acceso y conocimiento "
-                "para esta consulta, e inténtalo de nuevo.",
-                None,
-            )
-
+        # Devolvemos la respuesta tal cual la envía Genie (texto o DataFrame),
+        # incluso si en algunos casos pudiera coincidir con la pregunta original.
         return result, query_text
             
     except Exception as e:
