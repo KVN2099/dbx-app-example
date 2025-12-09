@@ -364,39 +364,41 @@ def process_genie_response(
         - result: Respuesta en texto o DataFrame
         - query_text: Texto de la consulta SQL si aplica; de lo contrario None
     """
-    # Comprueba primero los adjuntos
     attachments = complete_message.attachments or []
-    for attachment in attachments:
-        attachment_id = attachment.attachment_id
 
-        # Si hay contenido de texto en el adjunto, lo devuelve
+    # 1) Priorizar adjuntos de tipo consulta (tablas de datos)
+    for attachment in attachments:
+        if not attachment.query:
+            continue
+
+        attachment_id = attachment.attachment_id
+        query_text = attachment.query.query or ""
+        if not attachment_id:
+            continue
+
+        query_result = client.get_query_result(conversation_id, message_id, attachment_id)
+
+        data_array = query_result.get("data_array", [])
+        schema = query_result.get("schema", {})
+        columns = [col.get("name") for col in schema.get("columns", [])]
+
+        # Si tenemos datos, los devuelve como DataFrame
+        if data_array:
+            # Si no hay columnas en el esquema, crea columnas genéricas
+            if not columns and data_array and len(data_array) > 0:
+                columns = [f"column_{i}" for i in range(len(data_array[0]))]
+
+            df = pd.DataFrame(data_array, columns=columns)
+            return df, query_text
+
+    # 2) Si no hay consultas, usar el contenido de texto principal del mensaje
+    if complete_message.content:
+        return complete_message.content, None
+
+    # 3) Como último recurso, usar el texto de los adjuntos (si existe)
+    for attachment in attachments:
         if attachment.text and attachment.text.content:
             return attachment.text.content, None
-
-        # Si hay una consulta, obtiene el resultado
-        if attachment.query:
-            query_text = attachment.query.query or ""
-            if not attachment_id:
-                continue
-
-            query_result = client.get_query_result(conversation_id, message_id, attachment_id)
-
-            data_array = query_result.get("data_array", [])
-            schema = query_result.get("schema", {})
-            columns = [col.get("name") for col in schema.get("columns", [])]
-
-            # Si tenemos datos, los devuelve como DataFrame
-            if data_array:
-                # Si no hay columnas en el esquema, crea columnas genéricas
-                if not columns and data_array and len(data_array) > 0:
-                    columns = [f"column_{i}" for i in range(len(data_array[0]))]
-
-                df = pd.DataFrame(data_array, columns=columns)
-                return df, query_text
-
-    # Si no hay adjuntos o datos en los adjuntos, devuelve el contenido de texto
-    if complete_message.content is not None:
-        return complete_message.content, None
 
     return "No hay respuesta disponible", None
 
